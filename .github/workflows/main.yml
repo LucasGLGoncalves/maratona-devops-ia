@@ -4,10 +4,20 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      pipeline:
+        description: 'Escolha o pipeline para rodar manualmente'
+        required: true
+        type: choice
+        options:
+          - conversao-temperatura
+          - kube-news
 
 jobs:
   check-diff:
     name: Check Changed Files
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     outputs:
       changed-in-conversao-temperatura: ${{ steps.filter.outputs.conversao-temperatura }}
@@ -20,8 +30,8 @@ jobs:
       - name: Get changed files
         id: changed
         run: |
-          echo "CHANGED_FILES<<EOF" >> $GITHUB_ENV
           git fetch origin main
+          echo "CHANGED_FILES<<EOF" >> $GITHUB_ENV
           git diff --name-only origin/main...HEAD >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
@@ -47,7 +57,9 @@ jobs:
   pipeline-conversao-temperatura:
     name: Pipeline for Conversao Temperatura
     needs: check-diff
-    if: needs.check-diff.outputs.changed-in-conversao-temperatura == 'true'
+    if: |
+      (github.event_name == 'pull_request' && needs.check-diff.outputs.changed-in-conversao-temperatura == 'true') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.pipeline == 'conversao-temperatura')
     runs-on: ubuntu-latest
     steps:
       - name: Run build and tests for Conversao Temperatura
@@ -55,9 +67,15 @@ jobs:
 
   pipeline-kube-news:
     name: Pipeline for Kube News
-    needs: check-diff
-    if: needs.check-diff.outputs.changed-in-kube-news == 'true'
+    if: |
+      (github.event_name == 'pull_request' && needs.check-diff.outputs.changed-in-kube-news == 'true') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.pipeline == 'kube-news')
     runs-on: ubuntu-latest
     steps:
-      - name: Run build and tests for Kube News
-        run: echo "Running pipeline for Kube News"
+      - name: Trigger Kube News Workflow
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: kube-news_manual-action.yml
+          repo: LucasGLGoncalves/maratona-devops-ia
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main
