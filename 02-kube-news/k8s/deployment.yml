@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubenews-app
+spec:
+  selector:
+    matchLabels:
+      app: kubenews-app
+  template:
+    metadata:
+      labels:
+        app: kubenews-app
+    spec:
+      containers:
+      - name: kubenews-app
+        # change for variables later
+        image: rukasu/labk8s-kubenews:v1.0
+        env:
+          - name: NODE_ENV
+            value: production
+          - name: DB_HOST
+            value: kubenews-db-service
+          - name: DB_PORT
+            value: "5432"
+          - name: DB_DATABASE
+            value: kn-db
+          - name: DB_USERNAME
+            value: jooj
+          - name: DB_PASSWORD
+            value: "123456"
+          - name: DB_SSL_REQUIRE
+            value: "false"
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubenews-service
+spec:
+  selector:
+    app: kubenews-app
+  type: NodePort
+  ports:
+  - port: 8080
+    targetPort: 8080
+    nodePort: 30000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubenews-db
+spec:
+  selector:
+    matchLabels:
+      app: kubenews-db
+  template:
+    metadata:
+      labels:
+        app: kubenews-db
+    spec:
+      containers:
+      - name: kubenews-db
+        image: postgres:13-alpine3.22
+        env:
+          - name: POSTGRES_DB
+            value: kn-db
+          - name: POSTGRES_USER
+            value: jooj
+          - name: POSTGRES_PASSWORD
+            value: "123456"
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 5432
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubenews-db-service
+spec:
+  selector:
+    app: kubenews-db
+  type: ClusterIP
+  ports:
+  - port: 5432
+    targetPort: 5432
