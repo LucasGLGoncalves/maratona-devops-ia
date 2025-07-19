@@ -1,7 +1,7 @@
 services:
   # Serviço da aplicação Kube-News
   app:
-    image: rukasu/labk8s-kubenews:v1.1
+    image: rukasu/labk8s-kubenews:v1.5
     build:
       context: ./src
       dockerfile: Dockerfile
