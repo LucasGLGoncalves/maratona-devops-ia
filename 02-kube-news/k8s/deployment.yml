@@ -3,6 +3,7 @@ kind: Deployment
 metadata:
   name: kubenews-app
 spec:
+  replicas: 5
   selector:
     matchLabels:
       app: kubenews-app
@@ -31,9 +32,12 @@ spec:
           - name: DB_SSL_REQUIRE
             value: "false"
         resources:
+          requests:
+            memory: "64Mi"
+            cpu: "0.2"
           limits:
             memory: "128Mi"
-            cpu: "500m"
+            cpu: "0.5"
         ports:
         - containerPort: 8080
 ---
@@ -74,9 +78,12 @@ spec:
           - name: POSTGRES_PASSWORD
             value: "123456"
         resources:
+          requests:
+            memory: "64Mi"
+            cpu: "0.2"
           limits:
             memory: "128Mi"
-            cpu: "500m"
+            cpu: "0.5"
         ports:
         - containerPort: 5432
 ---
