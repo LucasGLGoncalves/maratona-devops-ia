@@ -1,7 +1,7 @@
 services:
   # Serviço da aplicação Kube-News
   app:
-    image: fabriciosveronez/kube-news-maratona:v1
+    image: rukasu/labk8s-kubenews:v1.5
     build:
       context: ./src
       dockerfile: Dockerfile
@@ -22,7 +22,7 @@ services:
 
   # Serviço do PostgreSQL
   db:
-    image: postgres:15-alpine
+    image: postgres:17.5-alpine3.22
     container_name: kube-news-db
     environment:
       - POSTGRES_DB=kubedevnews
