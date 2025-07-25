@@ -86,6 +86,9 @@ spec:
             cpu: "0.5"
         ports:
         - containerPort: 5432
+        volumeMount:
+        - mountPath: "/var/lib/postgresql/data"
+          name: kubenews-db-volume
 ---
 apiVersion: v1
 kind: Service
