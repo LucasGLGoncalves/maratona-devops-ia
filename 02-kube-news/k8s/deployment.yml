@@ -77,6 +77,8 @@ spec:
             value: jooj
           - name: POSTGRES_PASSWORD
             value: "123456"
+          - name: PGDATA
+            value: /var/lib/postgresql/data
         resources:
           requests:
             memory: "64Mi"
@@ -86,6 +88,14 @@ spec:
             cpu: "0.5"
         ports:
         - containerPort: 5432
+        volumeMounts:
+        - name: kubenews-db-volume
+          mountPath: "/var/lib/postgresql/data"
+      volumes:
+      - name: kubenews-db-volume
+        hostPath:
+          path: /k3d/images/pgData
+          type: Directory
 ---
 apiVersion: v1
 kind: Service
