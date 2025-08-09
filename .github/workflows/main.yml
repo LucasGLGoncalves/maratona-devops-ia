@@ -1,0 +1,81 @@
+name: PR Check - 01 or 02
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      pipeline:
+        description: 'Escolha o pipeline para rodar manualmente'
+        required: true
+        type: choice
+        options:
+          - conversao-temperatura
+          - kube-news
+
+jobs:
+  check-diff:
+    name: Check Changed Files
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      changed-in-conversao-temperatura: ${{ steps.filter.outputs.conversao-temperatura }}
+      changed-in-kube-news: ${{ steps.filter.outputs.kube-news }}
+
+    steps:
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+
+      - name: Get changed files
+        id: changed
+        run: |
+          git fetch origin main
+          echo "CHANGED_FILES<<EOF" >> $GITHUB_ENV
+          git diff --name-only origin/main...HEAD >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Filter files
+        id: filter
+        run: |
+          echo "::group::Changed files"
+          echo "$CHANGED_FILES"
+          echo "::endgroup::"
+
+          if echo "$CHANGED_FILES" | grep -q "^01-conversao-temperatura/"; then
+            echo "conversao-temperatura=true" >> $GITHUB_OUTPUT
+          else
+            echo "conversao-temperatura=false" >> $GITHUB_OUTPUT
+          fi
+
+          if echo "$CHANGED_FILES" | grep -q "^02-kube-news/"; then
+            echo "kube-news=true" >> $GITHUB_OUTPUT
+          else
+            echo "kube-news=false" >> $GITHUB_OUTPUT
+          fi
+
+  pipeline-conversao-temperatura:
+    name: Pipeline for Conversao Temperatura
+    needs: check-diff
+    if: |
+      (github.event_name == 'pull_request' && needs.check-diff.outputs.changed-in-conversao-temperatura == 'true') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.pipeline == 'conversao-temperatura')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run build and tests for Conversao Temperatura
+        run: echo "Running pipeline for Conversao Temperatura"
+
+  pipeline-kube-news:
+    name: Pipeline for Kube News
+    if: |
+      (github.event_name == 'pull_request' && needs.check-diff.outputs.changed-in-kube-news == 'true') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.pipeline == 'kube-news')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Kube News Workflow
+        uses: benc-uk/workflow-dispatch@v1
+        with:
+          workflow: kube-news_manual-action.yml
+          repo: LucasGLGoncalves/maratona-devops-ia
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main
